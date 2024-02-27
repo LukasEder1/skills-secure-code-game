@@ -12,22 +12,36 @@ Follow the instructions below to get started:
 '''
 
 from collections import namedtuple
+from decimal import *
 
 Order = namedtuple('Order', 'id, items')
 Item = namedtuple('Item', 'type, description, amount, quantity')
 
-def validorder(order: Order):
-    net = 0
+# DEFINE CONSTANTS
+PAYMENT_LIMIT = Decimal(1e+6)
 
+def validorder(order: Order):
+    paid = Decimal(0.0)
+    eps = 1e-3
+    to_pay = Decimal(0.0)
+    
     for item in order.items:
+        
         if item.type == 'payment':
-            net += item.amount
+            paid += Decimal(item.amount)
+            
         elif item.type == 'product':
-            net -= item.amount * item.quantity
+            to_pay += Decimal(item.amount * item.quantity)
+            if to_pay >= PAYMENT_LIMIT:
+                return "Total amount payable for an order exceeded"   
         else:
             return "Invalid item type: %s" % item.type
+    
+    net = Decimal(paid - to_pay)
 
-    if net != 0:
+    if net >= 0.0 + eps or net <= 0.0 - eps:
         return "Order ID: %s - Payment imbalance: $%0.2f" % (order.id, net)
     else:
         return "Order ID: %s - Full payment received!" % order.id
+    
+
